@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StudyGenius – PUSD Grade Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07080f;--surface:#0d0f1c;--card:#111426;--border:rgba(255,255,255,0.07);
+  --accent:#5b6ef5;--accent2:#38d9c0;--gold:#f6c344;--danger:#f87171;--success:#34d399;
+  --text:#e8eaf6;--muted:#4a5080;
+  --fh:"Syne",sans-serif;--fb:"DM Sans",sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:var(--fb);background:var(--bg);color:var(--text)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+
+/* ── Login ── */
+#login-screen{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 30% 40%,rgba(91,110,245,0.14) 0%,transparent 60%),
+             radial-gradient(ellipse at 75% 70%,rgba(56,217,192,0.08) 0%,transparent 50%),var(--bg);
+  z-index:1000;
+}
+.login-box{
+  width:430px;background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:42px;
+  box-shadow:0 40px 120px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04);
+}
+.login-logo{text-align:center;margin-bottom:32px}
+.login-logo h1{font-family:var(--fh);font-size:30px;font-weight:800;color:#fff;letter-spacing:-1px}
+.login-logo h1 span{color:var(--accent2)}
+.login-logo p{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:.5px}
+.login-badge{
+  display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+  background:rgba(56,217,192,0.1);border:1px solid rgba(56,217,192,0.25);
+  border-radius:20px;padding:5px 14px;font-size:11px;color:var(--accent2);font-weight:600;letter-spacing:.5px;
+}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.field input{
+  width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);border-radius:10px;color:var(--text);
+  font-size:14px;font-family:var(--fb);outline:none;transition:border-color .15s;
+}
+.field input:focus{border-color:rgba(91,110,245,0.5);background:rgba(91,110,245,0.04)}
+.login-btn{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;
+  cursor:pointer;font-family:var(--fh);letter-spacing:.4px;margin-top:6px;
+  transition:opacity .2s,transform .1s;
+}
+.login-btn:hover{opacity:.9;transform:translateY(-1px)}
+.login-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.login-note{
+  margin-top:14px;padding:11px 13px;background:rgba(52,211,153,0.06);
+  border:1px solid rgba(52,211,153,0.15);border-radius:8px;
+  font-size:11px;color:#6ee7b7;line-height:1.6;
+}
+.login-error{
+  margin-top:10px;padding:10px 12px;background:rgba(248,113,113,0.1);
+  border:1px solid rgba(248,113,113,0.25);border-radius:8px;
+  font-size:12px;color:#fca5a5;display:none;line-height:1.5;
+}
+.demo-link{
+  display:block;text-align:center;margin-top:14px;
+  font-size:12px;color:var(--muted);cursor:pointer;
+  transition:color .15s;text-decoration:none;
+}
+.demo-link:hover{color:var(--text)}
+
+/* ── App Shell ── */
+#app{display:none;flex-direction:column;height:100vh}
+#app.visible{display:flex}
+
+/* ── Topbar ── */
+#topbar{
+  height:52px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;
+  position:relative;z-index:10;
+}
+.top-logo{font-family:var(--fh);font-size:16px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.top-logo span{color:var(--accent2)}
+.top-divider{width:1px;height:20px;background:var(--border)}
+#student-name-top{font-size:13px;color:var(--muted)}
+.top-space{flex:1}
+.refresh-btn{
+  display:flex;align-items:center;gap:6px;padding:7px 13px;
+  background:rgba(56,217,192,0.08);border:1px solid rgba(56,217,192,0.2);
+  border-radius:8px;color:var(--accent2);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;font-family:var(--fb);
+}
+.refresh-btn:hover{background:rgba(56,217,192,0.16)}
+.refresh-btn.spin .ri{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notif-bell{
+  width:34px;height:34px;border-radius:8px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;position:relative;transition:background .15s;
+}
+.notif-bell:hover{background:rgba(255,255,255,0.08)}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;
+  background:var(--accent);border-radius:50%;border:2px solid var(--surface);
+  animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+.logout-btn{
+  padding:7px 13px;background:transparent;border:1px solid var(--border);
+  border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;
+  font-family:var(--fb);transition:all .15s;
+}
+.logout-btn:hover{border-color:rgba(248,113,113,0.4);color:var(--danger)}
+
+/* ── Body ── */
+#body{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ── */
+#sidebar{
+  width:218px;min-width:218px;background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:14px 10px 16px;
+}
+.nav-section-lbl{
+  font-size:9px;letter-spacing:2px;color:var(--muted);
+  font-weight:700;padding:10px 10px 5px;text-transform:uppercase;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 10px;border-radius:8px;cursor:pointer;
+  font-size:13px;font-weight:500;color:#5a6080;
+  transition:all .15s;margin-bottom:1px;border:1px solid transparent;
+}
+.nav-item:hover{background:rgba(255,255,255,0.03);color:var(--text)}
+.nav-item.active{background:rgba(91,110,245,0.12);color:#a5adfa;border-color:rgba(91,110,245,0.2)}
+.nav-icon{font-size:14px;width:20px;text-align:center}
+.sidebar-gap{flex:1}
+.gpa-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;
+}
+.gpa-lbl{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
+.gpa-val{font-family:var(--fh);font-size:28px;font-weight:800;color:var(--gold)}
+.gpa-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ── Content ── */
+#content{flex:1;overflow-y:auto}
+.page{display:none;padding:24px;animation:fadeUp .25s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Grade Cards ── */
+.pg-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.pg-title{font-family:var(--fh);font-size:20px;font-weight:800;margin-right:auto}
+.period-pill{
+  padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.period-pill.active{background:rgba(91,110,245,0.15);border-color:rgba(91,110,245,0.35);color:#a5adfa}
+.class-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.class-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:18px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.class-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--gc,var(--accent));transform:scaleX(0);transform-origin:left;transition:transform .2s;
+}
+.class-card:hover{border-color:rgba(255,255,255,0.12);transform:translateY(-2px)}
+.class-card:hover::after{transform:scaleX(1)}
+.cc-name{font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:3px}
+.cc-teacher{font-size:11px;color:var(--muted);margin-bottom:14px}
+.cc-grade-row{display:flex;align-items:baseline;gap:8px}
+.cc-pct{font-family:var(--fh);font-size:32px;font-weight:800;color:var(--gc,var(--text));line-height:1}
+.cc-letter{font-size:13px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(255,255,255,0.06);color:var(--gc,var(--text))}
+.cc-sub{font-size:11px;color:var(--muted);margin-top:5px}
+.cc-bar-wrap{margin-top:12px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px}
+.cc-bar{height:100%;border-radius:2px;background:var(--gc,var(--accent));transition:width .6s ease}
+
+/* ── Class Detail ── */
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;
+  font-size:13px;color:var(--muted);cursor:pointer;background:none;border:none;
+  font-family:var(--fb);transition:color .15s;
+}
+.back-btn:hover{color:var(--text)}
+.detail-header{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:22px 24px;margin-bottom:16px;display:flex;align-items:center;gap:20px;
+}
+.detail-circle{
+  width:78px;height:78px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--card);border:3px solid var(--gc,var(--accent));flex-shrink:0;
+}
+.detail-pct{font-family:var(--fh);font-size:20px;font-weight:800;color:var(--gc,var(--text));line-height:1}
+.detail-letter{font-size:12px;color:var(--gc,var(--muted));margin-top:2px}
+.detail-info h2{font-family:var(--fh);font-size:20px;font-weight:800;margin-bottom:4px}
+.detail-info p{font-size:12px;color:var(--muted);line-height:1.6}
+.ai-btn{
+  width:100%;display:flex;align-items:center;gap:8px;margin-bottom:16px;
+  padding:12px 16px;background:rgba(91,110,245,0.07);
+  border:1px solid rgba(91,110,245,0.2);border-radius:10px;
+  cursor:pointer;font-size:13px;color:#a5adfa;font-family:var(--fb);
+  text-align:left;transition:all .15s;
+}
+.ai-btn:hover{background:rgba(91,110,245,0.13)}
+.ai-btn:disabled{opacity:.5;cursor:not-allowed}
+.ai-box{
+  background:rgba(91,110,245,0.06);border:1px solid rgba(91,110,245,0.18);
+  border-radius:10px;padding:16px 18px;font-size:13px;color:#c4c9e8;
+  line-height:1.85;white-space:pre-wrap;margin-bottom:16px;
+}
+.assign-table{width:100%;border-collapse:collapse}
+.assign-table th{
+  text-align:left;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--border);
+}
+.assign-table td{
+  padding:11px 12px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03);
+}
+.assign-table tr:hover td{background:rgba(255,255,255,0.02)}
+.a-name{color:var(--text);font-weight:500}
+.a-cat{font-size:11px;color:var(--muted);margin-top:2px}
+.score-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.sA{background:rgba(52,211,153,.15);color:#34d399}
+.sB{background:rgba(251,191,36,.15);color:#fbbf24}
+.sC{background:rgba(248,113,113,.15);color:#f87171}
+.sN{background:rgba(255,255,255,.05);color:var(--muted)}
+
+/* ── AI Chat ── */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:300px}
+.chat-msgs{flex:1;overflow-y:auto;padding:4px 0;display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
+.msg{display:flex;align-items:flex-start;gap:9px;animation:fadeUp .2s ease}
+.msg.user{flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:2px}
+.msg.ai .msg-av{background:linear-gradient(135deg,#5b6ef5,#38d9c0)}
+.msg.user .msg-av{background:linear-gradient(135deg,#7c3aed,#5b6ef5)}
+.msg-bub{max-width:78%;padding:10px 14px;font-size:13.5px;line-height:1.75;white-space:pre-wrap;word-break:break-word}
+.msg.ai .msg-bub{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:4px 12px 12px 12px;color:var(--text)}
+.msg.user .msg-bub{background:linear-gradient(135deg,#4f46e5,#6d28d9);border-radius:12px 12px 4px 12px;color:#fff;box-shadow:0 4px 18px rgba(79,70,229,.3)}
+.typing-wrap{display:flex;align-items:flex-start;gap:9px}
+.typing{display:flex;align-items:center;gap:4px;padding:12px 14px}
+.typing span{width:5px;height:5px;background:var(--muted);border-radius:50%;animation:td 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+.chat-row{
+  display:flex;gap:8px;align-items:flex-end;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;padding:9px 12px;
+}
+.chat-row textarea{
+  flex:1;background:transparent;border:none;outline:none;color:var(--text);
+  font-size:13.5px;font-family:var(--fb);resize:none;max-height:100px;min-height:20px;line-height:1.5;
+}
+.chat-row textarea::placeholder{color:var(--muted)}
+.send-btn{
+  width:34px;height:34px;border-radius:8px;background:var(--accent);border:none;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:#fff;flex-shrink:0;transition:background .15s;
+}
+.send-btn:hover{background:#6b7ff6}
+.send-btn:disabled{background:rgba(91,110,245,.3);cursor:not-allowed}
+
+/* ── Page header ── */
+.pg-h2{font-family:var(--fh);font-size:20px;font-weight:800;margin-bottom:4px}
+.pg-sub{font-size:12px;color:var(--muted);margin-bottom:20px}
+
+/* ── Loading overlay ── */
+#loading-overlay{
+  position:fixed;inset:0;background:rgba(7,8,15,.88);backdrop-filter:blur(8px);
+  display:none;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px;
+}
+#loading-overlay.show{display:flex}
+.spinner{width:46px;height:46px;border:3px solid rgba(91,110,245,.2);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+#loading-txt{font-family:var(--fh);font-size:14px;color:var(--muted)}
+
+/* ── Notifications ── */
+#notif-stack{position:fixed;top:60px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:7px;max-width:310px;pointer-events:none}
+.toast{
+  background:rgba(10,12,22,.97);border:1px solid rgba(255,255,255,.07);border-radius:10px;
+  padding:11px 13px;display:flex;align-items:flex-start;gap:9px;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);backdrop-filter:blur(20px);
+  animation:toastIn .3s cubic-bezier(.34,1.56,.64,1);cursor:pointer;pointer-events:all;
+}
+.toast.out{opacity:0;transform:translateX(20px);transition:all .3s}
+@keyframes toastIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+.t-icon{font-size:18px;flex-shrink:0}
+.t-label{font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px}
+.t-msg{font-size:11.5px;color:#94a3b8;line-height:1.5}
+.tc-info{color:#60a5fa}.tc-success{color:#34d399}.tc-warn{color:#fbbf24}.tc-tip{color:#a78bfa}
+
+/* ── Empty / Placeholder ── */
+.empty{color:var(--muted);font-size:13px;padding:20px 0;grid-column:1/-1}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>Study<span>Genius</span></h1>
+      <p>PUSD AI GRADE TRACKER + TUTOR</p>
+      <div class="login-badge">🔗 Connected to StudentVUE®</div>
+    </div>
+
+    <div class="field">
+      <label>StudentVUE Username</label>
+      <input type="text" id="inp-user" placeholder="Your PUSD student ID / username" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="inp-pass" placeholder="Your StudentVUE password" autocomplete="current-password"/>
+    </div>
+
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Connect to Synergy →</button>
+    <div class="login-error" id="login-error"></div>
+
+    <div class="login-note">
+      🛡️ Credentials are sent <strong>directly</strong> to PUSD's servers via our secure proxy — never stored. Same privacy model as GradeCompass.
+    </div>
+
+    <a class="demo-link" onclick="loadDemo()">Try demo mode (sample data) →</a>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div id="loading-txt">Connecting to Synergy...</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <div id="topbar">
+    <div class="top-logo">Study<span>Genius</span></div>
+    <div class="top-divider"></div>
+    <div id="student-name-top">—</div>
+    <div class="top-space"></div>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshGrades()">
+      <span class="ri">↻</span> Refresh
+    </button>
+    <div class="notif-bell" onclick="requestNotifs()" title="Enable notifications">🔔<div class="notif-dot"></div></div>
+    <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+  </div>
+
+  <div id="body">
+    <nav id="sidebar">
+      <div class="nav-section-lbl">Grades</div>
+      <div class="nav-item active" onclick="showPage('grades',this)"><span class="nav-icon">📊</span> My Grades</div>
+
+      <div class="nav-section-lbl" style="margin-top:6px">AI Tools</div>
+      <div class="nav-item" onclick="showPage('tutor',this)"><span class="nav-icon">🎓</span> AI Tutor</div>
+      <div class="nav-item" onclick="showPage('quiz',this)"><span class="nav-icon">⚡</span> Quiz Me</div>
+      <div class="nav-item" onclick="showPage('homework',this)"><span class="nav-icon">📝</span> Homework Help</div>
+      <div class="nav-item" onclick="showPage('exam',this)"><span class="nav-icon">🏆</span> Exam Prep</div>
+
+      <div class="sidebar-gap"></div>
+      <div class="gpa-box">
+        <div class="gpa-lbl">Current GPA</div>
+        <div class="gpa-val" id="sidebar-gpa">—</div>
+        <div class="gpa-sub" id="sidebar-avg">Enter grades to calculate</div>
+      </div>
+    </nav>
+
+    <div id="content">
+
+      <!-- GRADES -->
+      <div id="page-grades" class="page active">
+        <div class="pg-header">
+          <div class="pg-title">📊 My Grades</div>
+          <div id="period-pills" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+        <div class="class-grid" id="class-grid">
+          <div class="empty">Loading your grades from Synergy...</div>
+        </div>
+      </div>
+
+      <!-- DETAIL -->
+      <div id="page-detail" class="page">
+        <button class="back-btn" onclick="showPage('grades')">← All Classes</button>
+        <div class="detail-header" id="detail-header"></div>
+        <button class="ai-btn" id="ai-insight-btn" onclick="getAIInsight()">
+          ✦ Get AI insight — what should I focus on to improve this grade?
+        </button>
+        <div class="ai-box" id="ai-box" style="display:none"></div>
+        <table class="assign-table">
+          <thead><tr>
+            <th>Assignment</th><th>Category</th><th>Due</th><th>Score</th><th>Points</th>
+          </tr></thead>
+          <tbody id="assign-body"></tbody>
+        </table>
+      </div>
+
+      <!-- TUTOR -->
+      <div id="page-tutor" class="page">
+        <div class="pg-h2">🎓 AI Tutor</div>
+        <div class="pg-sub">Ask anything — I have your real grades loaded for personalized advice.</div>
+        <div class="chat-wrap">
+          <div class="chat-msgs" id="tutor-msgs"></div>
+          <div id="tutor-typing" style="display:none">
+            <div class="typing-wrap"><div class="msg-av" style="background:linear-gradient(135deg,#5b6ef5,#38d9c0)">🎓</div><div class="msg-bub" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:4px 12px 12px 12px"><div class="typing"><span></span><span></span><span></span></div></div></div>
+          </div>
+          <div class="chat-row">
+            <textarea id="tutor-inp" rows="1" placeholder="Ask me anything... 'Explain Newton's laws' or 'Help with Chapter 4'"></textarea>
+            <button class="send-btn" onclick="sendTutor()">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUIZ -->
+      <div id="page-quiz" class="page">
+        <div class="pg-h2">⚡ Quiz Me</div>
+        <div class="pg-sub">AI generates questions tailored to your weak areas.</div>
+        <div class="chat-wrap">
+          <div class="chat-msgs" id="quiz-msgs"></div>
+          <div id="quiz-typing" style="display:none">
+            <div class="typing-wrap"><div class="msg-av" style="background:linear-gradient(135deg,#f6c344,#f97316)">⚡</div><div class="msg-bub" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:4px 12px 12px 12px"><div class="typing"><span></span><span></span><span></span></div></div></div>
+          </div>
+          <div class="chat-row">
+            <textarea id="quiz-inp" rows="1" placeholder="Topic to quiz on... e.g. 'AP Chemistry equilibrium' or 'US History Civil War'"></textarea>
+            <button class="send-btn" onclick="sendQuiz()">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOMEWORK -->
+      <div id="page-homework" class="page">
+        <div class="pg-h2">📝 Homework Help</div>
+        <div class="pg-sub">Step-by-step solving — I teach the method, not just the answer.</div>
+        <div class="chat-wrap">
+          <div class="chat-msgs" id="hw-msgs"></div>
+          <div id="hw-typing" style="display:none">
+            <div class="typing-wrap"><div class="msg-av" style="background:linear-gradient(135deg,#34d399,#059669)">📝</div><div class="msg-bub" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:4px 12px 12px 12px"><div class="typing"><span></span><span></span><span></span></div></div></div>
+          </div>
+          <div class="chat-row">
+            <textarea id="hw-inp" rows="2" placeholder="Paste your homework problem... e.g. 'Solve: 3x² - 5x + 2 = 0'"></textarea>
+            <button class="send-btn" onclick="sendHW()">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXAM -->
+      <div id="page-exam" class="page">
+        <div class="pg-h2">🏆 Exam Prep</div>
+        <div class="pg-sub">Strategic study plan built around your real grades and weak spots.</div>
+        <div class="chat-wrap">
+          <div class="chat-msgs" id="exam-msgs"></div>
+          <div id="exam-typing" style="display:none">
+            <div class="typing-wrap"><div class="msg-av" style="background:linear-gradient(135deg,#f97316,#dc2626)">🏆</div><div class="msg-bub" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:4px 12px 12px 12px"><div class="typing"><span></span><span></span><span></span></div></div></div>
+          </div>
+          <div class="chat-row">
+            <textarea id="exam-inp" rows="1" placeholder="e.g. 'AP Chemistry exam in 3 days, chapters 14-17: acids, bases, buffers'"></textarea>
+            <button class="send-btn" onclick="sendExam()">➤</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /body -->
+</div><!-- /app -->
+
+<div id="notif-stack"></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════
+const S = {
+  user:'', pass:'', gradebook:null, studentName:'',
+  periods:[], currentPeriod:0, currentClass:null,
+  isDemo:false,
+  tutorH:[], quizH:[], hwH:[], examH:[],
+};
+
+// ════════════════════════════════════════════════════════
+// SYNERGY API  (calls OUR server proxy at /api/synergy)
+// ════════════════════════════════════════════════════════
+async function synergyRequest(method, paramStr = '<Parms><ChildIntID>0</ChildIntID></Parms>') {
+  const res = await fetch('/api/synergy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: S.user,
+      password: S.pass,
+      method,
+      paramStr,
+      domain: 'sis.powayusd.com',
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Server error ${res.status}`);
+  }
+  const xml = await res.text();
+  const parser = new DOMParser();
+  return parser.parseFromString(xml, 'text/xml');
+}
+
+// ════════════════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ════════════════════════════════════════════════════════
+async function doLogin() {
+  const user = document.getElementById('inp-user').value.trim();
+  const pass = document.getElementById('inp-pass').value.trim();
+  if (!user || !pass) return showErr('Please enter your username and password.');
+
+  S.user = user; S.pass = pass;
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Connecting...';
+  hideErr(); showLoading('Connecting to PUSD Synergy...');
+
+  try {
+    setLoadTxt('Verifying credentials...');
+    const infoXml = await synergyRequest('StudentInfo');
+    const si = infoXml.querySelector('StudentInfo');
+    if (!si) throw new Error('Invalid credentials — no student info returned.');
+    S.studentName = si.getAttribute('FormattedName') || si.getAttribute('FullName') || user;
+
+    setLoadTxt('Loading your gradebook...');
+    const gbXml = await synergyRequest('Gradebook');
+    S.gradebook = gbXml;
+
+    // Parse report periods
+    S.periods = [];
+    gbXml.querySelectorAll('ReportPeriod').forEach((rp, i) => {
+      S.periods.push({ index: i, name: rp.getAttribute('GradePeriod') || `Period ${i+1}` });
+    });
+    if (!S.periods.length) S.periods = [{ index: 0, name: 'Current' }];
+
+    hideLoading(); launchApp();
+  } catch (err) {
+    hideLoading();
+    btn.disabled = false; btn.textContent = 'Connect to Synergy →';
+    showErr('Login failed: ' + err.message);
+  }
+}
+
+function doLogout() {
+  Object.assign(S, { user:'', pass:'', gradebook:null, studentName:'', isDemo:false, tutorH:[], quizH:[], hwH:[], examH:[] });
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('inp-pass').value = '';
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').textContent = 'Connect to Synergy →';
+  document.getElementById('tutor-msgs').innerHTML = '';
+  document.getElementById('quiz-msgs').innerHTML = '';
+  document.getElementById('hw-msgs').innerHTML = '';
+  document.getElementById('exam-msgs').innerHTML = '';
+}
+
+function showErr(m) { const e = document.getElementById('login-error'); e.textContent = m; e.style.display = 'block'; }
+function hideErr() { document.getElementById('login-error').style.display = 'none'; }
+function showLoading(t) { document.getElementById('loading-overlay').classList.add('show'); setLoadTxt(t); }
+function setLoadTxt(t) { document.getElementById('loading-txt').textContent = t; }
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+
+// ════════════════════════════════════════════════════════
+// LAUNCH
+// ════════════════════════════════════════════════════════
+function launchApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('student-name-top').textContent = S.studentName;
+  renderGrades();
+  initTutor();
+  setTimeout(() => pushNotif('Tip: Click any class for assignments + AI advice!', 'tip', '💡'), 3000);
+  setTimeout(() => pushNotif('Use AI Tutor — I have your real grades loaded!', 'info', '🎓'), 12000);
+}
+
+// ════════════════════════════════════════════════════════
+// GRADE HELPERS
+// ════════════════════════════════════════════════════════
+const gradeColor = p => p>=93?'#34d399':p>=80?'#a3e635':p>=70?'#fbbf24':p>=60?'#fb923c':'#f87171';
+const letterGrade = p => p>=93?'A':p>=90?'A-':p>=87?'B+':p>=83?'B':p>=80?'B-':p>=77?'C+':p>=73?'C':p>=70?'C-':p>=67?'D+':p>=63?'D':p>=60?'D-':'F';
+
+function parseClasses(xml) {
+  const classes = [];
+  xml.querySelectorAll('Course').forEach(c => {
+    const mark = c.querySelector('Mark');
+    const pct = mark ? parseFloat(mark.getAttribute('CalculatedScoreRaw') || '0') : 0;
+    const assignments = [];
+    c.querySelectorAll('Assignment').forEach(a => assignments.push({
+      name: a.getAttribute('Measure') || a.getAttribute('Name') || '—',
+      category: a.getAttribute('Type') || a.getAttribute('Category') || '',
+      due: a.getAttribute('DueDate') || '',
+      score: a.getAttribute('Score') || a.getAttribute('TeacherScore') || 'N/A',
+      points: a.getAttribute('Points') || '',
+      notes: a.getAttribute('Notes') || '',
+    }));
+    classes.push({
+      title: c.getAttribute('Title') || c.getAttribute('CourseName') || 'Unknown',
+      teacher: c.getAttribute('Staff') || c.getAttribute('Teacher') || '',
+      period: c.getAttribute('Period') || '',
+      pct, mark: mark ? (mark.getAttribute('CalculatedScoreString') || '') : '',
+      assignments,
+    });
+  });
+  return classes;
+}
+
+function renderGrades() {
+  const xml = S.gradebook;
+  if (!xml) return;
+
+  // Period pills
+  const pp = document.getElementById('period-pills');
+  pp.innerHTML = '';
+  S.periods.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'period-pill' + (i === S.currentPeriod ? ' active' : '');
+    el.textContent = p.name;
+    el.onclick = () => { S.currentPeriod = i; document.querySelectorAll('.period-pill').forEach((x,j)=>x.classList.toggle('active',j===i)); loadPeriodGrades(i); };
+    pp.appendChild(el);
+  });
+
+  const classes = parseClasses(xml);
+  renderClassGrid(classes);
+
+  if (classes.length) {
+    const avg = classes.reduce((s, c) => s + c.pct, 0) / classes.length;
+    document.getElementById('sidebar-gpa').textContent = Math.min(4.0, avg / 25).toFixed(2);
+    document.getElementById('sidebar-avg').textContent = `${avg.toFixed(1)}% average`;
+    checkAlerts(classes);
+  }
+}
+
+function renderClassGrid(classes) {
+  const grid = document.getElementById('class-grid');
+  grid.innerHTML = '';
+  if (!classes.length) { grid.innerHTML = '<div class="empty">No classes found for this period.</div>'; return; }
+  classes.forEach(cls => {
+    const color = gradeColor(cls.pct);
+    const letter = cls.mark || letterGrade(cls.pct);
+    const card = document.createElement('div');
+    card.className = 'class-card';
+    card.style.cssText = `--gc:${color}`;
+    card.innerHTML = `
+      <div class="cc-name">${cls.title}</div>
+      <div class="cc-teacher">${cls.teacher}${cls.period?' · Period '+cls.period:''}</div>
+      <div class="cc-grade-row">
+        <div class="cc-pct">${cls.pct.toFixed(1)}%</div>
+        <div class="cc-letter">${letter}</div>
+      </div>
+      <div class="cc-sub">${cls.assignments.length} assignment${cls.assignments.length!==1?'s':''} recorded</div>
+      <div class="cc-bar-wrap"><div class="cc-bar" style="width:${Math.min(cls.pct,100)}%"></div></div>`;
+    card.onclick = () => openDetail(cls);
+    grid.appendChild(card);
+  });
+}
+
+async function loadPeriodGrades(idx) {
+  if (S.isDemo) return;
+  showLoading(`Loading ${S.periods[idx].name}...`);
+  try {
+    const xml = await synergyRequest('Gradebook', `<Parms><ChildIntID>0</ChildIntID><ReportPeriod>${idx}</ReportPeriod></Parms>`);
+    S.gradebook = xml;
+    renderClassGrid(parseClasses(xml));
+    hideLoading(); pushNotif(`${S.periods[idx].name} loaded`, 'success', '📊');
+  } catch(e) { hideLoading(); pushNotif('Failed: '+e.message, 'warn', '⚠️'); }
+}
+
+async function refreshGrades() {
+  if (S.isDemo) { pushNotif('Demo mode — refresh not available', 'warn', 'ℹ️'); return; }
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spin'); pushNotif('Refreshing from Synergy...', 'info', '🔄');
+  try {
+    const xml = await synergyRequest('Gradebook');
+    S.gradebook = xml; renderGrades();
+    pushNotif('Grades updated! ✅', 'success', '📊');
+  } catch(e) { pushNotif('Refresh failed: '+e.message, 'warn', '⚠️'); }
+  btn.classList.remove('spin');
+}
+
+function checkAlerts(classes) {
+  const danger = classes.filter(c => c.pct < 70);
+  const warn = classes.filter(c => c.pct >= 70 && c.pct < 80);
+  if (danger.length) pushNotif(`${danger.map(c=>c.title).join(', ')} ${danger.length>1?'are':'is'} below 70% — needs urgent attention!`, 'warn', '🚨');
+  else if (warn.length) pushNotif(`${warn.map(c=>c.title).join(', ')} below 80% — let AI help you improve!`, 'info', '📚');
+  else pushNotif(`Grades loaded for ${S.studentName} 🎉`, 'success', '📊');
+}
+
+// ════════════════════════════════════════════════════════
+// CLASS DETAIL
+// ════════════════════════════════════════════════════════
+function openDetail(cls) {
+  S.currentClass = cls;
+  const color = gradeColor(cls.pct);
+  const letter = cls.mark || letterGrade(cls.pct);
+
+  document.getElementById('detail-header').innerHTML = `
+    <div class="detail-circle" style="--gc:${color}">
+      <div class="detail-pct">${cls.pct.toFixed(1)}%</div>
+      <div class="detail-letter">${letter}</div>
+    </div>
+    <div class="detail-info">
+      <h2>${cls.title}</h2>
+      <p>${cls.teacher}${cls.period?' · Period '+cls.period:''}</p>
+      <p>${cls.assignments.length} assignments recorded</p>
+    </div>`;
+
+  const aiBox = document.getElementById('ai-box');
+  aiBox.style.display = 'none'; aiBox.textContent = '';
+  const aiBtn = document.getElementById('ai-insight-btn');
+  aiBtn.disabled = false;
+  aiBtn.textContent = '✦ Get AI insight — what should I focus on to improve this grade?';
+
+  const tbody = document.getElementById('assign-body');
+  tbody.innerHTML = '';
+  if (!cls.assignments.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">No assignments recorded</td></tr>';
+  } else {
+    cls.assignments.forEach(a => {
+      const scoreNum = parseFloat(a.score);
+      const pts = a.points.split('/');
+      const total = parseFloat(pts[1]) || 0;
+      const pct2 = total > 0 ? scoreNum / total * 100 : null;
+      const sc = (!a.score || a.score==='N/A' || a.score==='Not Graded') ? 'sN' : pct2>=87?'sA':pct2>=70?'sB':'sC';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div class="a-name">${a.name}</div>${a.notes?`<div class="a-cat">${a.notes}</div>`:''}</td>
+        <td><div class="a-cat">${a.category||'—'}</div></td>
+        <td style="font-size:12px;color:var(--muted)">${a.due||'—'}</td>
+        <td><span class="score-pill ${sc}">${a.score||'—'}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${a.points||'—'}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  showPage('detail');
+}
+
+async function getAIInsight() {
+  const cls = S.currentClass; if (!cls) return;
+  const btn = document.getElementById('ai-insight-btn');
+  btn.disabled = true; btn.textContent = '✦ Analyzing with AI...';
+  const box = document.getElementById('ai-box');
+  box.style.display = 'none';
+  const recent = cls.assignments.slice(-8).map(a=>`${a.name}: ${a.score} (${a.points})`).join('\n');
+  try {
+    const resp = await callClaude(
+      `You are StudyGenius, an expert AI tutor with access to a student's real PUSD Synergy grades. Provide: 1) Grade assessment and trend, 2) Specific weak assignments to address, 3) Concrete action steps to raise the grade by one letter, 4) What score they need on the next assignment to move up. Be direct, specific, and encouraging.`,
+      `Class: ${cls.title}\nGrade: ${cls.pct.toFixed(1)}% (${cls.mark||letterGrade(cls.pct)})\nTeacher: ${cls.teacher}\n\nRecent assignments:\n${recent||'None recorded'}\n\nWhat should I focus on to improve?`
+    );
+    box.textContent = resp; box.style.display = 'block';
+    btn.textContent = '✦ Refresh AI Insight'; btn.disabled = false;
+    pushNotif('AI class insight ready!', 'tip', '✦');
+  } catch(e) {
+    box.textContent = '⚠️ Error: ' + e.message; box.style.display = 'block';
+    btn.disabled = false; btn.textContent = '✦ Try Again';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// CLAUDE AI
+// ════════════════════════════════════════════════════════
+async function callClaude(system, userMsg, history = []) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514', max_tokens: 1000, system,
+      messages: [...history, { role: 'user', content: userMsg }],
+    }),
+  });
+  const d = await res.json();
+  return d.content?.[0]?.text ?? 'No response.';
+}
+
+function gradeCtx() {
+  if (!S.gradebook) return '';
+  const cls = parseClasses(S.gradebook);
+  return '\n\nStudent\'s live Synergy grades:\n' + cls.map(c=>`${c.title}: ${c.pct.toFixed(1)}% (${c.mark||letterGrade(c.pct)})`).join('\n');
+}
+
+const PROMPTS = {
+  tutor: `You are StudyGenius, an expert AI tutor for a PUSD high school student. You have their real Synergy grades. Use them to give personalized advice. Explain concepts clearly with examples. End with 🌟 one Pro Tip and a follow-up question.`,
+  quiz: `You are StudyGenius Quiz Master. Generate 3 progressive multiple-choice questions. Format:\nQ1: [question]\nA) B) C) D)\n✅ Answer: [letter] — [explanation]\nEnd: "What did you score?"`,
+  hw: `You are StudyGenius Homework Helper. Never just give the answer — teach the METHOD step by step so the student can solve similar problems independently. Show work, explain the concept, end with a practice problem.`,
+  exam: `You are StudyGenius Exam Strategist. Use the student's real grades to build a personalized exam prep plan. Include key concepts, memory tricks, 3-day schedule, predicted questions. Be strategic and motivating.`,
+};
+
+function addMsg(id, role, text) {
+  const c = document.getElementById(id);
+  const d = document.createElement('div');
+  d.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+  const avMap = { 'tutor-msgs':'🎓', 'quiz-msgs':'⚡', 'hw-msgs':'📝', 'exam-msgs':'🏆' };
+  const av = role === 'user' ? '👤' : (avMap[id] || '🎓');
+  d.innerHTML = `<div class="msg-av">${av}</div><div class="msg-bub">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>`;
+  c.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+}
+
+async function handleChat(inpId, msgsId, typId, histKey, sys) {
+  const inp = document.getElementById(inpId);
+  const txt = inp.value.trim(); if (!txt) return;
+  inp.value = ''; inp.style.height = '';
+  addMsg(msgsId, 'user', txt);
+  S[histKey].push({ role: 'user', content: txt });
+  document.getElementById(typId).style.display = 'block';
+  const msgsEl = document.getElementById(msgsId);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+  try {
+    const r = await callClaude(sys + gradeCtx(), txt, S[histKey].slice(0,-1));
+    document.getElementById(typId).style.display = 'none';
+    addMsg(msgsId, 'ai', r); S[histKey].push({ role:'assistant', content:r });
+  } catch(e) {
+    document.getElementById(typId).style.display = 'none';
+    addMsg(msgsId, 'ai', '⚠️ Error: ' + e.message);
+  }
+}
+
+function sendTutor() { handleChat('tutor-inp','tutor-msgs','tutor-typing','tutorH',PROMPTS.tutor); }
+function sendQuiz()  { handleChat('quiz-inp','quiz-msgs','quiz-typing','quizH',PROMPTS.quiz); }
+function sendHW()    { handleChat('hw-inp','hw-msgs','hw-typing','hwH',PROMPTS.hw); }
+function sendExam()  { handleChat('exam-inp','exam-msgs','exam-typing','examH',PROMPTS.exam); }
+
+function initTutor() {
+  const cls = S.gradebook ? parseClasses(S.gradebook) : [];
+  const lowest = cls.length ? [...cls].sort((a,b)=>a.pct-b.pct)[0] : null;
+  addMsg('tutor-msgs', 'ai', lowest
+    ? `👋 Hi ${S.studentName}! I can see your Synergy grades. Your lowest class is **${lowest.title}** at ${lowest.pct.toFixed(1)}% — want help bringing that up? Ask me anything! 🎓`
+    : `👋 Hi ${S.studentName}! I'm your AI Tutor. Your grades are loaded from Synergy. Ask me to explain any concept, help with homework, or build a study plan! 🎓`
+  );
+}
+
+// ════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════
+function showPage(id, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if (navEl) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ════════════════════════════════════════════════════════
+function pushNotif(msg, type='info', icon='💡') {
+  const stack = document.getElementById('notif-stack');
+  const d = document.createElement('div');
+  const tc = {info:'tc-info',success:'tc-success',warn:'tc-warn',tip:'tc-tip'}[type]||'tc-info';
+  d.className = 'toast';
+  d.innerHTML = `<span class="t-icon">${icon}</span><div><div class="t-label ${tc}">StudyGenius</div><div class="t-msg">${msg}</div></div>`;
+  d.onclick = () => d.remove();
+  stack.appendChild(d);
+  if ('Notification' in window && Notification.permission === 'granted') new Notification('StudyGenius', { body: msg });
+  setTimeout(() => { d.classList.add('out'); setTimeout(() => d.remove(), 300); }, 5500);
+}
+
+function requestNotifs() {
+  if (!('Notification' in window)) return pushNotif('Browser does not support notifications', 'warn', '⚠️');
+  Notification.requestPermission().then(p => {
+    if (p === 'granted') pushNotif('System notifications enabled! 🔔', 'success', '✅');
+    else pushNotif('Notification permission denied.', 'warn', '⚠️');
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// DEMO MODE
+// ════════════════════════════════════════════════════════
+function loadDemo() {
+  S.isDemo = true; S.studentName = 'Demo Student'; S.user = 'demo'; S.pass = 'demo';
+  const demoXML = `<Gradebook><ReportingPeriods><ReportPeriod Index="0" GradePeriod="S1"/><ReportPeriod Index="1" GradePeriod="S2"/></ReportingPeriods><Courses>
+    <Course Title="AP Chemistry" Staff="Mr. Johnson" Period="1"><Marks><Mark CalculatedScoreRaw="78.4" CalculatedScoreString="C+"><Assignments>
+      <Assignment Measure="Lab Report #3" Type="Lab" DueDate="2/15/2026" Score="72" Points="72/100"/>
+      <Assignment Measure="Midterm Exam" Type="Test" DueDate="2/1/2026" Score="81" Points="81/100"/>
+      <Assignment Measure="Quiz: Equilibrium" Type="Quiz" DueDate="2/25/2026" Score="67" Points="67/100"/>
+    </Assignments></Mark></Marks></Course>
+    <Course Title="AP US History" Staff="Ms. Patel" Period="2"><Marks><Mark CalculatedScoreRaw="91.2" CalculatedScoreString="A-"><Assignments>
+      <Assignment Measure="DBQ Essay" Type="Essay" DueDate="2/10/2026" Score="88" Points="88/100"/>
+      <Assignment Measure="Chapter 14 Test" Type="Test" DueDate="2/18/2026" Score="94" Points="94/100"/>
+    </Assignments></Mark></Marks></Course>
+    <Course Title="Algebra 2 / Trig" Staff="Mrs. Chen" Period="3"><Marks><Mark CalculatedScoreRaw="65.3" CalculatedScoreString="D"><Assignments>
+      <Assignment Measure="Unit 5 Test" Type="Test" DueDate="2/12/2026" Score="58" Points="58/100"/>
+      <Assignment Measure="Trig Quiz" Type="Quiz" DueDate="2/26/2026" Score="61" Points="61/100"/>
+    </Assignments></Mark></Marks></Course>
+    <Course Title="English Lit" Staff="Mr. Williams" Period="4"><Marks><Mark CalculatedScoreRaw="88.7" CalculatedScoreString="B+"><Assignments>
+      <Assignment Measure="Gatsby Essay" Type="Essay" DueDate="2/8/2026" Score="90" Points="90/100"/>
+    </Assignments></Mark></Marks></Course>
+    <Course Title="AP Computer Science A" Staff="Ms. Torres" Period="5"><Marks><Mark CalculatedScoreRaw="96.1" CalculatedScoreString="A"><Assignments>
+      <Assignment Measure="Linked List Project" Type="Project" DueDate="2/14/2026" Score="98" Points="98/100"/>
+    </Assignments></Mark></Marks></Course>
+    <Course Title="Spanish 3" Staff="Señora Garcia" Period="6"><Marks><Mark CalculatedScoreRaw="82.0" CalculatedScoreString="B-"><Assignments>
+      <Assignment Measure="Speaking Assessment" Type="Assessment" DueDate="2/11/2026" Score="78" Points="78/100"/>
+    </Assignments></Mark></Marks></Course>
+  </Courses></Gradebook>`;
+  S.gradebook = new DOMParser().parseFromString(demoXML, 'text/xml');
+  S.periods = [{index:0,name:'S1'},{index:1,name:'S2'}];
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('student-name-top').textContent = 'Demo Student';
+  renderGrades(); initTutor();
+  pushNotif('Demo mode — showing sample PUSD grades', 'warn', 'ℹ️');
+  setTimeout(() => pushNotif('Tip: Click any class card to see assignments + AI advice!', 'tip', '💡'), 2500);
+}
+
+// ════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ════════════════════════════════════════════════════════
+['tutor-inp','quiz-inp','hw-inp','exam-inp'].forEach(id => {
+  const el = document.getElementById(id); if (!el) return;
+  const fns = {'tutor-inp':sendTutor,'quiz-inp':sendQuiz,'hw-inp':sendHW,'exam-inp':sendExam};
+  el.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();fns[id]();} });
+  el.addEventListener('input', function() { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,100)+'px'; });
+});
+document.getElementById('inp-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
